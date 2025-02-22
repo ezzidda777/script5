@@ -1,40 +1,27 @@
--- 로컬 스크립트 (StarterPlayerScripts 내)
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local DamageEvent = ReplicatedStorage:WaitForChild("DamageEvent")
+-- Local Script (클라이언트에서 실행)
+local DamageEvent = game.ReplicatedStorage:WaitForChild("DamageEvent")
 local LocalPlayer = game.Players.LocalPlayer
 
--- 발사 후 주변 플레이어에게 데미지를 입히는 예시
-local function triggerDamage(target, damageAmount)
-    -- 서버로 DamageEvent 호출, 타겟과 데미지 값 전달
-    DamageEvent:FireServer(target, damageAmount)
-end
-
--- 예시로 플레이어 주변에 있는 적을 찾아서 데미지 입히기
-local function checkForEnemies()
-    local range = 50  -- 범위 설정 (50 studs 내)
+-- 주변의 플레이어들을 감지하는 코드 (예시)
+local function detectTargetAndDealDamage()
     local character = LocalPlayer.Character
-    local position = character and character:WaitForChild("HumanoidRootPart").Position
-
-    if not position then return end
-    
-    -- 주변에 있는 모든 플레이어 확인
-    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
-        if otherPlayer ~= LocalPlayer and otherPlayer.Character then
-            local otherCharacter = otherPlayer.Character
-            local otherHumanoidRootPart = otherCharacter:FindFirstChild("HumanoidRootPart")
-            if otherHumanoidRootPart then
-                local distance = (position - otherHumanoidRootPart.Position).Magnitude
-                if distance <= range then
-                    -- 범위 내에 있으면 데미지 입히기
-                    triggerDamage(otherHumanoidRootPart, 10)  -- 10의 데미지
+    if character then
+        local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+        -- 주변에 있는 다른 플레이어를 감지 (예시: 10 스터디 내의 플레이어)
+        for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
+            if otherPlayer ~= LocalPlayer then
+                local target = otherPlayer.Character
+                if target and (target:FindFirstChild("Humanoid") and (humanoidRootPart.Position - target.HumanoidRootPart.Position).Magnitude < 10) then
+                    -- 타겟을 찾았다면 데미지 요청을 서버에 전송
+                    DamageEvent:FireServer(target, 10)  -- 10은 데미지 값 (이 부분은 원하는 데미지 값으로 변경)
                 end
             end
         end
     end
 end
 
--- 예시로 1초마다 주변 적을 체크
+-- 예시로 1초마다 감지하여 데미지를 주는 부분
 while true do
-    wait(1)
-    checkForEnemies()
+    detectTargetAndDealDamage()
+    wait(1)  -- 1초마다 데미지 주기
 end
